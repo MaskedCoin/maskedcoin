@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,6 +20,7 @@
 #include "CryptoNoteCore/CryptoNoteTools.h"
 #include "CryptoNoteCore/Core.h"
 #include "CryptoNoteCore/Currency.h"
+#include "CryptoNoteCore/UpgradeDetector.h"
 
 //#include "AccountBoostSerialization.h"
 //#include "cryptonote_boost_serialization.h"

@@ -1,4 +1,9 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
+// Copyright (c) 2010-2017 Kohaku developers
+// Copyright (c) 2017 Wayang developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -37,7 +42,12 @@ enum WalletErrorCodes {
   OBJECT_NOT_FOUND,
   WALLET_NOT_FOUND,
   CHANGE_ADDRESS_REQUIRED,
-  CHANGE_ADDRESS_NOT_FOUND
+  CHANGE_ADDRESS_NOT_FOUND,
+  DEPOSIT_TERM_TOO_SMALL,
+  DEPOSIT_TERM_TOO_BIG,
+  DEPOSIT_AMOUNT_TOO_SMALL,
+  DEPOSIT_DOESNOT_EXIST,
+  DEPOSIT_LOCKED
 };
 
 // custom category:
@@ -80,6 +90,11 @@ public:
     case WALLET_NOT_FOUND:         return "Requested wallet not found";
     case CHANGE_ADDRESS_REQUIRED:  return "Change address required";
     case CHANGE_ADDRESS_NOT_FOUND: return "Change address not found";
+    case DEPOSIT_TERM_TOO_SMALL:   return "Deposit term is too small";
+    case DEPOSIT_TERM_TOO_BIG:     return "Deposit term is too big";
+    case DEPOSIT_AMOUNT_TOO_SMALL: return "Deposit amount is too small";
+    case DEPOSIT_DOESNOT_EXIST:    return "Deposit doesn't exist";
+    case DEPOSIT_LOCKED:           return "Deposit is locked";
     default:                       return "Unknown error";
     }
   }

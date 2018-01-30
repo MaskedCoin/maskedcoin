@@ -1,4 +1,7 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -129,6 +132,8 @@ bool TimestampTransactionsIndex::find(uint64_t timestampBegin, uint64_t timestam
   }
   auto begin = index.lower_bound(timestampBegin);
   auto end = index.upper_bound(timestampEnd);
+  if (timestampEnd == static_cast<uint64_t>(0) && end == begin && begin == index.begin() && index.size() > 0)
+	  ++end; //fix for genesis non-zero timestamp
 
   hashesNumberWithinTimestamps = static_cast<uint32_t>(std::distance(begin, end));
 
@@ -136,6 +141,7 @@ bool TimestampTransactionsIndex::find(uint64_t timestampBegin, uint64_t timestam
     ++hashesNumber;
     hashes.emplace_back(iter->second);
   }
+
   return hashesNumber > 0;
 }
 

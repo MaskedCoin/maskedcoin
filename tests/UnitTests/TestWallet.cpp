@@ -1,4 +1,7 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
+// Copyright (c) 2010-2017 Kohaku developers
+// Copyright (c) 2017 Wayang developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -26,6 +29,8 @@
 #include <System/Context.h>
 
 #include "TransactionApiHelpers.h"
+
+#include <iostream>
 
 using namespace Crypto;
 using namespace Common;
@@ -149,7 +154,11 @@ public:
     alice(dispatcher, currency, node),
     FEE(currency.minimumFee()),
     FUSION_THRESHOLD(currency.defaultDustThreshold() * 10)
-  { }
+  {
+    CryptoNote::AccountBase account;
+    account.generate();
+    RANDOM_ADDRESS = currency.accountAddressAsString(account.getAccountKeys().address);
+  }
 
   virtual void SetUp() override;
   virtual void TearDown() override;
@@ -217,9 +226,9 @@ protected:
   CryptoNote::WalletGreen alice;
   std::string aliceAddress;
 
-  const uint64_t SENT = 1122334455;
+  const uint64_t SENT = 12345;//1122334455;
   const uint64_t FEE;
-  const std::string RANDOM_ADDRESS = "2634US2FAz86jZT73YmM8u5GPCknT2Wxj8bUCKivYKpThFhF2xsjygMGxbxZzM42zXhKUhym6Yy6qHHgkuWtruqiGkDpX6m";
+  std::string RANDOM_ADDRESS;
   const uint64_t FUSION_THRESHOLD;
 };
 
@@ -313,7 +322,7 @@ void WalletApi::unlockMoney() {
 
 void WalletApi::unlockMoney(CryptoNote::WalletGreen& wallet, INodeTrivialRefreshStub& inode) {
   auto prev = wallet.getActualBalance();
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow()); //coinbase money should become available after 10 blocks
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   inode.updateObservers();
   waitActualBalanceUpdated(wallet, prev);
 }
@@ -584,7 +593,7 @@ std::vector<CryptoNote::WalletTransfer> getTransfersFromTransaction(CryptoNote::
   return result;
 }
 
-static const uint64_t TEST_BLOCK_REWARD = 70368744177663;
+static const uint64_t TEST_BLOCK_REWARD = 100000;////32000000000000;
 
 TEST_F(WalletApi, emptyBalance) {
   ASSERT_EQ(0, alice.getActualBalance());
@@ -703,7 +712,8 @@ TEST_F(WalletApi, transferNegativeAmount) {
 TEST_F(WalletApi, transferFromTwoAddresses) {
   generateBlockReward();
   generateBlockReward(alice.createAddress());
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  unlockMoney();
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   node.updateObservers();
 
   waitForActualBalance(2 * TEST_BLOCK_REWARD);
@@ -751,7 +761,7 @@ TEST_F(WalletApi, transferTooBigTransaction) {
   gen.getBlockRewardForAddress(parseAddress(wallet.getAddress(0)));
 
   auto prev = wallet.getActualBalance();
-  gen.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  gen.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   n.updateObservers();
   waitActualBalanceUpdated(wallet, prev);
 
@@ -799,7 +809,7 @@ TEST_F(WalletApi, transferFromSpecificAddress) {
   auto secondAddress = alice.createAddress();
   generateBlockReward(secondAddress);
 
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   node.updateObservers();
   waitActualBalanceUpdated();
 
@@ -1051,12 +1061,12 @@ void WalletApi::testIWalletDataCompatibility(bool details, const std::string& ca
         txtrs.push_back(trs[i]);
       }
     }
-    auto txId = iWalletCache.addNewTransaction(tx.totalAmount, tx.fee, tx.extra, txtrs, tx.unlockTime);
+    auto txId = iWalletCache.addNewTransaction(tx.totalAmount, tx.fee, tx.extra, txtrs, tx.unlockTime, {});
     iWalletCache.updateTransactionSendingState(txId, std::error_code());
   }
 
   for (const auto& item: externalTxs) {
-    iWalletCache.onTransactionUpdated(item.first, item.second);
+    iWalletCache.onTransactionUpdated(item.first, item.second, {}, {}, currency);
   }
 
   std::stringstream stream;
@@ -1110,7 +1120,11 @@ void WalletApi::testIWalletDataCompatibility(bool details, const std::string& ca
       EXPECT_EQ(txBalance, tx.totalAmount);
 
       if (inTx.totalAmountIn) {
-        EXPECT_EQ(inTx.totalAmountIn - inTx.totalAmountOut, tx.fee);
+        EXPECT_EQ( 
+			inTx.totalAmountIn < inTx.totalAmountOut + parameters::MINIMUM_FEE
+				? parameters::MINIMUM_FEE 
+				: inTx.totalAmountIn - inTx.totalAmountOut, 
+			tx.fee);
       } else {
         EXPECT_EQ(0, tx.fee);
       }
@@ -1379,7 +1393,7 @@ TEST_F(WalletApi, detachBlockchain) {
   auto alicePrev = alice.getActualBalance();
 
   node.startAlternativeChain(1);
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   node.updateObservers();
   waitActualBalanceUpdated(alicePrev);
 
@@ -1401,28 +1415,23 @@ TEST_F(WalletApi, deleteAddresses) {
 
 TEST_F(WalletApi, incomingTxTransferWithChange) {
   generateAndUnlockMoney();
-
+  generateAndUnlockMoney(); //due to lower block reward compared to old genesis, must get two to have enough for second fee before change arrives
   CryptoNote::WalletGreen bob(dispatcher, currency, node, TRANSACTION_SOFTLOCK_TIME);
   bob.initialize("pass2");
   bob.createAddress();
   bob.createAddress();
-
   sendMoney(bob.getAddress(0), SENT, FEE);
   sendMoney(bob.getAddress(1), 2 * SENT, FEE);
   node.updateObservers();
   waitForTransactionCount(bob, 2);
-
   EXPECT_EQ(3, bob.getTransactionTransferCount(0)); //sent from alice + received on bob + alice change
   ASSERT_EQ(3, bob.getTransactionTransferCount(1));
-
   auto tr1 = bob.getTransactionTransfer(0, 0);
   EXPECT_EQ(tr1.address, bob.getAddress(0));
   EXPECT_EQ(tr1.amount, SENT);
-
   auto tr2 = bob.getTransactionTransfer(1, 0);
   EXPECT_EQ(tr2.address, bob.getAddress(1));
   EXPECT_EQ(tr2.amount, 2 * SENT);
-
   bob.shutdown();
   wait(100);
 }
@@ -1573,7 +1582,7 @@ TEST_F(WalletApi, syncAfterLoad) {
   alice.shutdown();
 
   generateBlockReward();
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
 
   alice.load(data, "pass");
 
@@ -1842,7 +1851,7 @@ TEST_F(WalletApi, trackingAddressUnlocksMoney) {
   bob.createAddress(publicKey);
 
   sendMoney(bob.getAddress(0), SENT, FEE);
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   node.updateObservers();
   waitActualBalanceUpdated(bob, 0);
 
@@ -1860,7 +1869,7 @@ TEST_F(WalletApi, transferFromTrackingKeyThrows) {
   bob.createAddress(publicKey);
 
   sendMoney(bob.getAddress(0), SENT, FEE);
-  generator.generateEmptyBlocks(currency.minedMoneyUnlockWindow());
+  generator.generateEmptyBlocks(std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME)));
   node.updateObservers();
   waitActualBalanceUpdated(bob, 0);
 
@@ -2125,7 +2134,7 @@ size_t findDonationTransferId(const WalletGreen& wallet, size_t transactionId) {
 }
 
 TEST_F(WalletApi, donationTransferPresents) {
-  const uint64_t DONATION_THRESHOLD = 1000000;
+  const uint64_t DONATION_THRESHOLD = 10000;//1000000;
 
   generator.getSingleOutputTransaction(parseAddress(aliceAddress), SENT + FEE + DONATION_THRESHOLD);
   unlockMoney();
@@ -2202,8 +2211,9 @@ TEST_F(WalletApi, donationTransactionHaveCorrectFee) {
 
   wallet.transfer(params);
 
+  uint32_t height = std::max(currency.minedMoneyUnlockWindow(), static_cast<size_t>(TRANSACTION_SOFTLOCK_TIME));
   ASSERT_TRUE(catchNode.caught);
-  ASSERT_EQ(FEE, getInputAmount(catchNode.transaction) - getOutputAmount(catchNode.transaction));
+  ASSERT_EQ(FEE, currency.getTransactionAllInputsAmount(catchNode.transaction, height) - getOutputAmount(catchNode.transaction));
 
   wallet.shutdown();
 }

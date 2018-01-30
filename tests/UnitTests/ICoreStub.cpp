@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,6 +12,7 @@
 
 
 ICoreStub::ICoreStub() :
+    m_currency(CryptoNote::CurrencyBuilder(m_logger).currency()),
     topHeight(0),
     globalIndicesResult(false),
     randomOutsResult(false),
@@ -19,12 +21,17 @@ ICoreStub::ICoreStub() :
 }
 
 ICoreStub::ICoreStub(const CryptoNote::Block& genesisBlock) :
+    m_currency(CryptoNote::CurrencyBuilder(m_logger).currency()),
     topHeight(0),
     globalIndicesResult(false),
     randomOutsResult(false),
     poolTxVerificationResult(true),
     poolChangesResult(true) {
   addBlock(genesisBlock);
+}
+
+const CryptoNote::Currency& ICoreStub::currency() const {
+  return m_currency;
 }
 
 bool ICoreStub::addObserver(CryptoNote::ICoreObserver* observer) {
@@ -244,7 +251,7 @@ bool ICoreStub::getAlreadyGeneratedCoins(const Crypto::Hash& hash, uint64_t& gen
   return true;
 }
 
-bool ICoreStub::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee,
+bool ICoreStub::getBlockReward(size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee, uint32_t height,
     uint64_t& reward, int64_t& emissionChange) {
   return true;
 }
@@ -324,7 +331,7 @@ std::unique_ptr<CryptoNote::IBlock> ICoreStub::getBlock(const Crypto::Hash& bloc
   return std::unique_ptr<CryptoNote::IBlock>(nullptr);
 }
 
-bool ICoreStub::handleIncomingTransaction(const CryptoNote::Transaction& tx, const Crypto::Hash& txHash, size_t blobSize, CryptoNote::tx_verification_context& tvc, bool keptByBlock) {
+bool ICoreStub::handleIncomingTransaction(const CryptoNote::Transaction& tx, const Crypto::Hash& txHash, size_t blobSize, CryptoNote::tx_verification_context& tvc, bool keptByBlock, uint32_t /*height*/) {
   auto result = transactionPool.emplace(std::make_pair(txHash, tx));
   tvc.m_verifivation_failed = !poolTxVerificationResult;
   tvc.m_added_to_pool = true;

@@ -1,4 +1,9 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
+// Copyright (c) 2010-2017 Kohaku developers
+// Copyright (c) 2017 Wayang developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,5 +11,5 @@
 
 namespace CryptoNote
 {
-  const static boost::uuids::uuid CRYPTONOTE_NETWORK = { { 0x41, 0x53, 0x58, 0x51, 0x53, 0x3f, 0x2e, 0x2f, 0x24, 0x35, 0x10, 0x14, 0x11, 0x12, 0x02, 0x13 } };
+  const static boost::uuids::uuid CRYPTONOTE_NETWORK = { { 0x40, 0x4f, 0x18, 0x50, 0x54, 0x45, 0x2e, 0x4f, 0x54, 0x15, 0x00, 0x12, 0x00, 0x11, 0x05, 0x10 } };
 }

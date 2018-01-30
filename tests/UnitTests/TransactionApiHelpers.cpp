@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -110,6 +111,16 @@ void TestTransactionBuilder::addInput(const AccountKeys& senderKeys, const Trans
   keys[idx] = std::make_pair(info, ephKeys);
 }
 
+void TestTransactionBuilder::addMultisignatureInput(uint64_t amount, uint32_t signatures, uint32_t outputIndex, uint32_t term) {
+  MultisignatureInput input;
+  input.amount = amount;
+  input.signatureCount = signatures;
+  input.outputIndex = outputIndex;
+  input.term = term;
+
+  tx->addInput(input);
+}
+
 void TestTransactionBuilder::addTestMultisignatureInput(uint64_t amount, const TransactionOutputInformation& t) {
   MultisignatureInput input;
   input.amount = amount;
@@ -171,6 +182,8 @@ TransactionOutputInformationIn TestTransactionBuilder::addTestMultisignatureOutp
   // Doesn't used in multisignature output, so can contain garbage
   outputInfo.keyImage = generateKeyImage();
   outputInfo.requiredSignatures = output.requiredSignatureCount;
+  outputInfo.term = output.term;
+
   return outputInfo;
 }
 

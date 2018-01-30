@@ -1,4 +1,7 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,6 +15,8 @@ const char* getStatusString(CryptoNote::HttpResponse::HTTP_STATUS status) {
   switch (status) {
   case CryptoNote::HttpResponse::STATUS_200:
     return "200 OK";
+  case CryptoNote::HttpResponse::STATUS_401:
+    return "401 Unauthorized";
   case CryptoNote::HttpResponse::STATUS_404:
     return "404 Not Found";
   case CryptoNote::HttpResponse::STATUS_500:
@@ -25,6 +30,8 @@ const char* getStatusString(CryptoNote::HttpResponse::HTTP_STATUS status) {
 
 const char* getErrorBody(CryptoNote::HttpResponse::HTTP_STATUS status) {
   switch (status) {
+  case CryptoNote::HttpResponse::STATUS_401:
+    return "Authorization required\n";
   case CryptoNote::HttpResponse::STATUS_404:
     return "Requested url is not found\n";
   case CryptoNote::HttpResponse::STATUS_500:

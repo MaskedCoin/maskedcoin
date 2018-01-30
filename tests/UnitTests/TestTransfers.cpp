@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -141,18 +142,6 @@ protected:
   std::promise<std::error_code> syncCompleted;
   std::future<std::error_code> syncCompletedFuture;
 };
-
-
-namespace CryptoNote {
-  inline bool operator == (const TransactionOutputInformation& t1, const TransactionOutputInformation& t2) {
-    return 
-      t1.type == t2.type &&
-      t1.amount == t2.amount &&
-      t1.outputInTransaction == t2.outputInTransaction &&
-      t1.transactionPublicKey == t2.transactionPublicKey;
-  }
-}
-
 
 TEST_F(TransfersApi, testSubscriptions) {
   addAccounts(1);

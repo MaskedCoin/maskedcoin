@@ -1,4 +1,9 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
+// Copyright (c) 2010-2017 Kohaku developers
+// Copyright (c) 2017 Wayang developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,6 +19,7 @@ namespace CryptoNote
   public:
     Checkpoints(Logging::ILogger& log);
 
+    std::map<uint32_t, Crypto::Hash> get_checkpoints() { return m_points; }
     bool add_checkpoint(uint32_t height, const std::string& hash_str);
     bool is_in_checkpoint_zone(uint32_t height) const;
     bool check_block(uint32_t height, const Crypto::Hash& h) const;

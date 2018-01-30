@@ -1,4 +1,7 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
+// Copyright (c) 2010-2017 Kohaku developers
+// Copyright (c) 2017 Wayang developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -1026,13 +1029,13 @@ TEST_F(BlockchainExplorerTests, getBlocksByTimestampGenesis) {
 
   uint32_t totalBlocksNumber;
 
-  ASSERT_TRUE(blockchainExplorer.getBlocks(0, 0, 1, blocks, totalBlocksNumber));
+  ASSERT_TRUE(blockchainExplorer.getBlocks(GENESIS_TIMESTAMP, GENESIS_TIMESTAMP, 1, blocks, totalBlocksNumber));
   ASSERT_EQ(blocks.size(), 1);
   EXPECT_EQ(totalBlocksNumber, 1);
 
   Hash expectedHash = genesisHash;
   EXPECT_EQ(blocks.front().hash, expectedHash);
-  EXPECT_EQ(blocks.front().timestamp, 0);
+  EXPECT_EQ(blocks.front().timestamp, GENESIS_TIMESTAMP);
   EXPECT_FALSE(blocks.front().isOrphaned);
 }
 

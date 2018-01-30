@@ -1,4 +1,7 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
+// Copyright (c) 2011-2017 The Cryptonote developers
+ 
+ 
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -19,6 +22,11 @@ void StreamLogger::attachToStream(std::ostream& stream) {
 }
 
 void StreamLogger::doLogString(const std::string& message) {
+  #ifdef DEBUG
+    //print log to console too
+    std::cout << message;
+  #endif
+	
   if (stream != nullptr && stream->good()) {
     std::lock_guard<std::mutex> lock(mutex);
     bool readingText = true;

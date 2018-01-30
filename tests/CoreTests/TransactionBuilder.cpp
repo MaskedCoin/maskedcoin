@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,11 +12,15 @@ using namespace Crypto;
 using namespace Common;
 
 TransactionBuilder::TransactionBuilder(const CryptoNote::Currency& currency, uint64_t unlockTime)
-  : m_currency(currency), m_version(CryptoNote::CURRENT_TRANSACTION_VERSION), m_unlockTime(unlockTime), m_txKey(generateKeyPair()) {}
+  : m_currency(currency), m_version(CryptoNote::TRANSACTION_VERSION_1), m_unlockTime(unlockTime), m_txKey(generateKeyPair()) {}
 
 TransactionBuilder& TransactionBuilder::newTxKeys() {
   m_txKey = generateKeyPair();
   return *this;
+}
+
+KeyPair TransactionBuilder::getTxKeys() const {
+  return m_txKey;
 }
 
 TransactionBuilder& TransactionBuilder::setTxKeys(const CryptoNote::KeyPair& txKeys) {
@@ -31,6 +36,7 @@ TransactionBuilder& TransactionBuilder::setInput(const std::vector<CryptoNote::T
 
 TransactionBuilder& TransactionBuilder::addMultisignatureInput(const MultisignatureSource& source) {
   m_msigSources.push_back(source);
+  m_version = TRANSACTION_VERSION_2;
   return *this;
 }
 
@@ -44,15 +50,17 @@ TransactionBuilder& TransactionBuilder::addOutput(const CryptoNote::TransactionD
   return *this;
 }
 
-TransactionBuilder& TransactionBuilder::addMultisignatureOut(uint64_t amount, const KeysVector& keys, uint32_t required) {
+TransactionBuilder& TransactionBuilder::addMultisignatureOut(uint64_t amount, const KeysVector& keys, uint32_t required, uint32_t term) {
 
   MultisignatureDestination dst;
 
   dst.amount = amount;
   dst.keys = keys;
   dst.requiredSignatures = required;
+  dst.term = term;
 
   m_msigDestinations.push_back(dst);
+  m_version = TRANSACTION_VERSION_2;
 
   return *this;
 }
@@ -127,6 +135,7 @@ void TransactionBuilder::fillOutputs(Transaction& tx) const {
     MultisignatureOutput target;
 
     target.requiredSignatureCount = mdst.requiredSignatures;
+    target.term = mdst.term;
 
     for (const auto& key : mdst.keys) {
       Crypto::KeyDerivation derivation;
@@ -142,6 +151,9 @@ void TransactionBuilder::fillOutputs(Transaction& tx) const {
   }
 }
 
+void TransactionBuilder::setVersion(std::size_t version) {
+  m_version = version;
+}
 
 void TransactionBuilder::signSources(const Crypto::Hash& prefixHash, const std::vector<CryptoNote::KeyPair>& contexts, Transaction& tx) const {
   

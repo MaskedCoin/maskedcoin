@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -78,6 +79,7 @@ DoubleSpendBase::DoubleSpendBase() :
   send_amount(MK_COINS(17)),
   has_invalid_tx(false)
 {
+  m_currency = CurrencyBuilder(m_logger).upgradeHeight(0).currency();
   m_outputTxKey = generateKeyPair();
   m_bob_account.generate();
   m_alice_account.generate();
@@ -132,9 +134,10 @@ bool DoubleSpendBase::check_double_spend(CryptoNote::core& c, size_t /*ev_index*
 TestGenerator DoubleSpendBase::prepare(std::vector<test_event_entry>& events) const {
 
   TestGenerator generator(m_currency, events);
+  generator.generator.defaultMajorVersion = BLOCK_MAJOR_VERSION_2;
 
   // unlock
-  generator.generateBlocks();
+  generator.generateBlocks(m_currency.minedMoneyUnlockWindow(), BLOCK_MAJOR_VERSION_2);
 
   auto builder = generator.createTxBuilder(generator.minerAccount, m_bob_account, send_amount, m_currency.minimumFee());
 
@@ -153,7 +156,7 @@ TestGenerator DoubleSpendBase::prepare(std::vector<test_event_entry>& events) co
   generator.makeNextBlock(tx);
 
   // unlock
-  generator.generateBlocks(); 
+  generator.generateBlocks(m_currency.minedMoneyUnlockWindow(), BLOCK_MAJOR_VERSION_2);
 
   return generator;
 }
@@ -166,6 +169,7 @@ TransactionBuilder::MultisignatureSource DoubleSpendBase::createSource() const {
   src.input.amount = send_amount;
   src.input.outputIndex = 0;
   src.input.signatureCount = 1;
+  src.input.term = 0;
 
   src.keys.push_back(m_bob_account.getAccountKeys());
   src.srcTxPubKey = m_outputTxKey.publicKey;

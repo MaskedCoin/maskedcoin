@@ -1,4 +1,5 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
+ 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -25,8 +26,11 @@ public:
   TransactionBuilder(const CryptoNote::Currency& currency, uint64_t unlockTime = 0);
 
   // regenerate transaction keys
+  CryptoNote::KeyPair getTxKeys() const;
   TransactionBuilder& newTxKeys();
   TransactionBuilder& setTxKeys(const CryptoNote::KeyPair& txKeys);
+
+  void setVersion(std::size_t version);
 
   // inputs
   TransactionBuilder& setInput(const std::vector<CryptoNote::TransactionSourceEntry>& sources, const CryptoNote::AccountKeys& senderKeys);
@@ -35,7 +39,7 @@ public:
   // outputs
   TransactionBuilder& setOutput(const std::vector<CryptoNote::TransactionDestinationEntry>& destinations);
   TransactionBuilder& addOutput(const CryptoNote::TransactionDestinationEntry& dest);
-  TransactionBuilder& addMultisignatureOut(uint64_t amount, const KeysVector& keys, uint32_t required);
+  TransactionBuilder& addMultisignatureOut(uint64_t amount, const KeysVector& keys, uint32_t required, uint32_t term = 0);
 
   CryptoNote::Transaction build() const;
 
@@ -52,6 +56,7 @@ private:
     uint64_t amount;
     uint32_t requiredSignatures;
     KeysVector keys;
+    uint32_t term;
   };
 
   CryptoNote::AccountKeys m_senderKeys;
